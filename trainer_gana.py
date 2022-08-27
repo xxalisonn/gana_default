@@ -29,8 +29,7 @@ class Trainer:
         self.eval_epoch = parameter['eval_epoch']
         self.checkpoint_epoch = parameter['checkpoint_epoch']
         # device
-        # self.device = parameter['device']
-        self.device = 'cpu'
+        self.device = parameter['device']
 
         self.data_path = parameter['data_path']
         self.embed_model = parameter['embed_model']
@@ -44,7 +43,7 @@ class Trainer:
         degrees = self.build_connection(max_=self.max_neighbor)
 
         self.metaR = MetaR(dataset, parameter, self.num_symbols, embed = self.symbol2vec)
-        # self.metaR.to(self.device)
+        self.metaR.to(self.device)
         # optimizer
         self.optimizer = torch.optim.Adam(self.metaR.parameters(), self.learning_rate)
         # tensorboard log writer
@@ -167,14 +166,10 @@ class Trainer:
         return degrees
 
     def get_meta(self, left, right):
-        # left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0))).cuda()
-        # left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left])).cuda()
-        # right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0))).cuda()
-        # right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right])).cuda()
-        left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0)))
-        left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left]))
-        right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0)))
-        right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right]))
+        left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0))).cuda()
+        left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left])).cuda()
+        right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0))).cuda()
+        right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right])).cuda()
         return (left_connections, left_degrees, right_connections, right_degrees)
 
     def reload(self):
@@ -275,15 +270,13 @@ class Trainer:
         if not iseval:
             self.optimizer.zero_grad()
             p_score, n_score = self.metaR(task, iseval, curr_rel, support_meta, istest)
-            # y = torch.Tensor([1]).to(self.device)
-            y = torch.Tensor([1])
+            y = torch.Tensor([1]).to(self.device)
             loss = self.metaR.loss_func(p_score, n_score, y)
             loss.backward()
             self.optimizer.step()
         elif curr_rel != '':
             p_score, n_score = self.metaR(task, iseval, curr_rel, support_meta, istest)
-            # y = torch.Tensor([1]).to(self.device)
-            y = torch.Tensor([1])
+            y = torch.Tensor([1]).to(self.device)
             loss = self.metaR.loss_func(p_score, n_score, y)
         return loss, p_score, n_score
 
