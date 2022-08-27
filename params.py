@@ -48,8 +48,7 @@ def get_params():
     elif args.dataset == 'Wiki-One':
         params['embed_dim'] = 50
 
-    # params['device'] = torch.device('cuda:'+str(args.device))
-    params['device'] = torch.device('cpu')
+    params['device'] = torch.device('cuda:'+str(args.device))
 
     return params
 
