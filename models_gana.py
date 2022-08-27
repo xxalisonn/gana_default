@@ -68,8 +68,10 @@ class LSTM_attn(nn.Module):
         size = inputs.shape
         inputs = inputs.contiguous().view(size[0], size[1], -1)
         input = inputs.permute(1, 0, 2)
-        hidden_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden)).cuda()
-        cell_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden)).cuda()
+        # hidden_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden)).cuda()
+        hidden_state = Variable(torch.zeros(self.layers * 2, size[0], self.n_hidden))
+        # cell_state = Variable(torch.zeros(self.layers * 2, size[0], self.n_hidden)).cuda()
+        cell_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden))
         output, (final_hidden_state, final_cell_state) = self.lstm(input, (hidden_state, cell_state))
         output = output.permute(1, 0, 2)
         attn_output = self.attention_net(output, final_hidden_state)
@@ -83,7 +85,9 @@ class EmbeddingLearner(nn.Module):
         super(EmbeddingLearner, self).__init__()
 
     def forward(self, h, t, r, pos_num, norm):
-        norm = norm[:,:1,:,:]						# revise
+        # norm_vector: [batchsize,fewnum,1,100]
+        # 先取一个fewnum的norm_vector
+        norm = norm[:,:1,:,:]
         h = h - torch.sum(h * norm, -1, True) * norm
         t = t - torch.sum(t * norm, -1, True) * norm
         score = -torch.norm(h + r - t, 2, -1).squeeze(2)
@@ -149,7 +153,7 @@ class MetaR(nn.Module):
         num_neighbors: (batch,)
         '''
         num_neighbors = num_neighbors.unsqueeze(1)
-        entself = connections[:,:,0].squeeze(-1)
+        entself = connections[:,0,0].squeeze(-1)
         relations = connections[:,:,1].squeeze(-1)
         entities = connections[:,:,2].squeeze(-1)
         rel_embeds = self.dropout(self.symbol_emb(relations)) # (batch, 200, embed_dim)
@@ -178,19 +182,24 @@ class MetaR(nn.Module):
                                 negative[:, :, 1, :]], 1).unsqueeze(2)
         return pos_neg_e1, pos_neg_e2
 
-
+    # task: [4,batchsize,fewnum,3]
     def forward(self, task, iseval=False, curr_rel='', support_meta=None, istest=False):
-        # transfer task string into embedding
+        # support: [batchsize,fewnum,2,100]
         support, support_negative, query, negative = [self.embedding(t) for t in task]
+        # norm_vector: [batchsize,fewnum,1,100]
         norm_vector = self.h_embedding(task[0])
         few = support.shape[1]              # num of few
         num_sn = support_negative.shape[1]  # num of support negative
         num_q = query.shape[1]              # num of query
         num_n = negative.shape[1]           # num of query negative
 
+        #support_meta: [fewnum,4,batchsize,50,3] [fewnum,4,batchsize]
         support_left_connections, support_left_degrees, support_right_connections, support_right_degrees = support_meta[0]
+        # 此处只计算了一个fewnum的聚合向量
+        # support_left:[1024,100]
         support_left = self.neighbor_encoder(support_left_connections, support_left_degrees, istest)
         support_right = self.neighbor_encoder(support_right_connections, support_right_degrees, istest)
+        # support_few: [batchsize,200] -> [batchsize,fewnum,2,100]
         support_few = torch.cat((support_left, support_right), dim=-1)
         support_few = support_few.view(support_few.shape[0], 2, self.embed_dim)
 
@@ -201,28 +210,36 @@ class MetaR(nn.Module):
             support_pair = torch.cat((support_left, support_right), dim=-1)  # tanh
             support_pair = support_pair.view(support_pair.shape[0], 2, self.embed_dim)
             support_few = torch.cat((support_few, support_pair), dim=1)
+        # support_few: [batchsize,fewnum,2,100]
         support_few = support_few.view(support_few.shape[0], self.few, 2, self.embed_dim)
+        # [batchsize,1,1,100]
         rel = self.relation_learner(support_few)
         rel.retain_grad()
 
-        # relation for support
+        # 为support集学习关系向量rel_s
+        # rel_s: [batchsize,fewnum+negnum,1,100]
         rel_s = rel.expand(-1, few+num_sn, -1, -1)
         if iseval and curr_rel != '' and curr_rel in self.rel_q_sharing.keys():
             rel_q = self.rel_q_sharing[curr_rel]
-
+        # start train
         else:
             if not self.abla:
-                # split on e1/e2 and concat on pos/neg
+                # 将support集的正向三元组和负向三元组拼接在一起之后，分离开头尾实体
+                # sup_neg_e1,sup_neg_e2: [batchsize,fewnum+negnum,1,100]
                 sup_neg_e1, sup_neg_e2 = self.split_concat(support, support_negative)
 
+                # 开始学习超平面关系向量
+                # sup_neg_e1: [batchsize,fewnum+negnum,1,100]
                 p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector)	# revise norm_vector
 
-                y = torch.Tensor([1]).to(self.device)
+                # y = torch.Tensor([1]).to(self.device)
+                y = torch.Tensor([1])
                 self.zero_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
                 grad_meta = rel.grad
                 rel_q = rel - self.beta*grad_meta
+                # 更新超平面关系向量
                 norm_q = norm_vector - self.beta*grad_meta				# hyper-plane update
             else:
                 rel_q = rel
