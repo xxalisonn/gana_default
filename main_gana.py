@@ -3,6 +3,7 @@ from params import *
 from data_loader import *
 import json
 
+
 if __name__ == '__main__':
     params = get_params()
 

@@ -29,7 +29,8 @@ class Trainer:
         self.eval_epoch = parameter['eval_epoch']
         self.checkpoint_epoch = parameter['checkpoint_epoch']
         # device
-        self.device = parameter['device']
+        # self.device = parameter['device']
+        self.device = 'cpu'
 
         self.data_path = parameter['data_path']
         self.embed_model = parameter['embed_model']
@@ -43,7 +44,7 @@ class Trainer:
         degrees = self.build_connection(max_=self.max_neighbor)
 
         self.metaR = MetaR(dataset, parameter, self.num_symbols, embed = self.symbol2vec)
-        self.metaR.to(self.device)
+        # self.metaR.to(self.device)
         # optimizer
         self.optimizer = torch.optim.Adam(self.metaR.parameters(), self.learning_rate)
         # tensorboard log writer
@@ -166,10 +167,14 @@ class Trainer:
         return degrees
 
     def get_meta(self, left, right):
-        left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0))).cuda()
-        left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left])).cuda()
-        right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0))).cuda()
-        right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right])).cuda()
+        # left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0))).cuda()
+        # left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left])).cuda()
+        # right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0))).cuda()
+        # right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right])).cuda()
+        left_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in left], axis=0)))
+        left_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in left]))
+        right_connections = Variable(torch.LongTensor(np.stack([self.connections[_,:,:] for _ in right], axis=0)))
+        right_degrees = Variable(torch.FloatTensor([self.e1_degrees[_] for _ in right]))
         return (left_connections, left_degrees, right_connections, right_degrees)
 
     def reload(self):
@@ -239,7 +244,9 @@ class Trainer:
 
     def do_one_step(self, task, iseval=False, curr_rel='', istest=False):
         loss, p_score, n_score = 0, 0, 0
+        # support: [batchsize,fewnum,3]
         support = task[0]
+        # support_left,support_right: [batchsize*fewnum]
         support_left = [self.ent2id[few[0]] for batch in support for few in batch]
         support_right = [self.ent2id[few[2]] for batch in support for few in batch]
         if iseval == False:
@@ -249,8 +256,8 @@ class Trainer:
             meta_left = [[0] for i in range(self.few)]
             meta_right = [[0] for i in range(self.few)]
 
-            #print(len(meta_left))
-            #print(len(meta_left[0]))
+        # 把初始化好的一维矩阵复原为二维
+        # meta_left, meta_right: [fewnum,batchsize]
         for i in range(len(meta_left)):
             for j in range(len(meta_left[0])):
                 meta_left[i][j] = support_left[j*self.few + i]
@@ -259,24 +266,24 @@ class Trainer:
                 meta_right[i][j] = support_right[j*self.few + i]
             
         support_meta = []
+        # get_meta返回(left_connections, left_degrees, right_connections, right_degrees)
+        # support_meta: [fewnum,4,batchsize,connections or degrees]
+        # connections: [max_neighbor(50), 3] degrees:[1]
         for i in range(len(meta_left)):
-                #print(len(meta_left[0]))
-                #print(meta_left[0])
             support_meta.append(self.get_meta(meta_left[i], meta_right[i]))
+        # start to train
         if not iseval:
             self.optimizer.zero_grad()
-            #print(task[0][0])
-            
-            #print(support_meta)
-
             p_score, n_score = self.metaR(task, iseval, curr_rel, support_meta, istest)
-            y = torch.Tensor([1]).to(self.device)
+            # y = torch.Tensor([1]).to(self.device)
+            y = torch.Tensor([1])
             loss = self.metaR.loss_func(p_score, n_score, y)
             loss.backward()
             self.optimizer.step()
         elif curr_rel != '':
             p_score, n_score = self.metaR(task, iseval, curr_rel, support_meta, istest)
-            y = torch.Tensor([1]).to(self.device)
+            # y = torch.Tensor([1]).to(self.device)
+            y = torch.Tensor([1])
             loss = self.metaR.loss_func(p_score, n_score, y)
         return loss, p_score, n_score
 
@@ -289,6 +296,7 @@ class Trainer:
         # training by epoch
         for e in range(self.epoch):
             # sample one batch from data_loader
+            # train_task: [4, batchsize, fewnum, 3] curr_rel:[batchsize]
             train_task, curr_rel = self.train_data_loader.next_batch()
             loss, _, _ = self.do_one_step(train_task, iseval=False, curr_rel=curr_rel, istest=False)
             # print the loss on specific epoch

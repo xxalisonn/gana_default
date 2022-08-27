@@ -20,7 +20,8 @@ class Embedding(nn.Module):
 
     def forward(self, triples):
         idx = [[[self.ent2id[t[0]], self.ent2id[t[2]]] for t in batch] for batch in triples]
-        idx = torch.LongTensor(idx).to(self.device)
+        # idx = torch.LongTensor(idx).to(self.device)
+        idx = torch.LongTensor(idx)
         return self.embedding(idx)
 
 

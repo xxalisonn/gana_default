@@ -5,10 +5,10 @@ import argparse
 def get_params():
     args = argparse.ArgumentParser()
     args.add_argument("-data", "--dataset", default="NELL-One", type=str)  # ["NELL-One", "Wiki-One"]
-    args.add_argument("-path", "--data_path", default="./NELL", type=str)  # ["./NELL", "./Wiki"]
+    args.add_argument("-path", "--data_path", default="./NELL_1", type=str)  # ["./NELL", "./Wiki"]
     args.add_argument("-form", "--data_form", default="Pre-Train", type=str)  # ["Pre-Train", "In-Train", "Discard"]
     args.add_argument("-seed", "--seed", default=None, type=int)
-    args.add_argument("-few", "--few", default=1, type=int)
+    args.add_argument("-few", "--few", default=3, type=int)
     args.add_argument("-nq", "--num_query", default=3, type=int)
     args.add_argument("-metric", "--metric", default="MRR", choices=["MRR", "Hits@10", "Hits@5", "Hits@1"])
 
@@ -48,7 +48,8 @@ def get_params():
     elif args.dataset == 'Wiki-One':
         params['embed_dim'] = 50
 
-    params['device'] = torch.device('cuda:'+str(args.device))
+    # params['device'] = torch.device('cuda:'+str(args.device))
+    params['device'] = torch.device('cpu')
 
     return params
 
