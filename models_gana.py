@@ -68,10 +68,8 @@ class LSTM_attn(nn.Module):
         size = inputs.shape
         inputs = inputs.contiguous().view(size[0], size[1], -1)
         input = inputs.permute(1, 0, 2)
-        # hidden_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden)).cuda()
-        hidden_state = Variable(torch.zeros(self.layers * 2, size[0], self.n_hidden))
-        # cell_state = Variable(torch.zeros(self.layers * 2, size[0], self.n_hidden)).cuda()
-        cell_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden))
+        hidden_state = Variable(torch.zeros(self.layers*2, size[0], self.n_hidden)).cuda()
+        cell_state = Variable(torch.zeros(self.layers * 2, size[0], self.n_hidden)).cuda()
         output, (final_hidden_state, final_cell_state) = self.lstm(input, (hidden_state, cell_state))
         output = output.permute(1, 0, 2)
         attn_output = self.attention_net(output, final_hidden_state)
@@ -232,8 +230,7 @@ class MetaR(nn.Module):
                 # sup_neg_e1: [batchsize,fewnum+negnum,1,100]
                 p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector)	# revise norm_vector
 
-                # y = torch.Tensor([1]).to(self.device)
-                y = torch.Tensor([1])
+                y = torch.Tensor([1]).to(self.device)
                 self.zero_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
