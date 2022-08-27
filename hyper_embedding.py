@@ -16,8 +16,7 @@ class H_Embedding(nn.Module):
 
     def forward(self, triples):
         rel_emb = [[[self.rel2id[t[1]]] for t in batch] for batch in triples]
-        # rel_emb = torch.LongTensor(rel_emb).to(self.device)
-        rel_emb = torch.LongTensor(rel_emb)
+        rel_emb = torch.LongTensor(rel_emb).to(self.device)
         return self.norm_vector(rel_emb)
 
 
