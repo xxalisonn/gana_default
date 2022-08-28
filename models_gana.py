@@ -218,7 +218,7 @@ class MetaR(nn.Module):
 
                 p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector)	# revise norm_vector
 
-                y = torch.Tensor([self.batchsize, 5]).cuda()
+                y = torch.ones(self.batchsize).cuda()
                 self.zero_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
