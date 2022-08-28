@@ -8,7 +8,7 @@ def get_params():
     args.add_argument("-path", "--data_path", default="./NELL_1", type=str)  # ["./NELL", "./Wiki"]
     args.add_argument("-form", "--data_form", default="Pre-Train", type=str)  # ["Pre-Train", "In-Train", "Discard"]
     args.add_argument("-seed", "--seed", default=None, type=int)
-    args.add_argument("-few", "--few", default=3, type=int)
+    args.add_argument("-few", "--few", default=1, type=int)
     args.add_argument("-nq", "--num_query", default=3, type=int)
     args.add_argument("-metric", "--metric", default="MRR", choices=["MRR", "Hits@10", "Hits@5", "Hits@1"])
 
