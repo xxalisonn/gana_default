@@ -107,6 +107,7 @@ class MetaR(nn.Module):
         self.margin = parameter['margin']
         self.abla = parameter['ablation']
         self.rel2id = dataset['rel2id']
+        self.batchsize = parameter['batch_size']
         self.num_rel = len(self.rel2id)
         self.embedding = Embedding(dataset, parameter)
         self.h_embedding = H_Embedding(dataset, parameter)
@@ -217,7 +218,7 @@ class MetaR(nn.Module):
 
                 p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector)	# revise norm_vector
 
-                y = torch.Tensor([1]).cuda()
+                y = torch.Tensor([self.batchsize, 5]).cuda()
                 self.zero_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
