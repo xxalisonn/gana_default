@@ -270,7 +270,7 @@ class Trainer:
             #print(support_meta)
 
             p_score, n_score = self.metaR(task, iseval, curr_rel, support_meta, istest)
-            y = torch.Tensor([1]).to(self.device)
+            y = torch.ones(p_score.size()).to(self.device)
             loss = self.metaR.loss_func(p_score, n_score, y)
             loss.backward()
             self.optimizer.step()
