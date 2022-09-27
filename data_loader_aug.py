@@ -25,7 +25,7 @@ class DataLoader(object):
 
     def get_aug_support(self,support_triples,rel,max_num):
       if rel in self.task_aug.keys():
-        for i in range len(max_num):
+        for i in range(max_num):
           support_triples.append(self.task_aug[rel][i])
       return support_triples
     
