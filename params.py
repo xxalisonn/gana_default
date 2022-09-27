@@ -37,6 +37,7 @@ def get_params():
     args.add_argument("-eval_by_rel", "--eval_by_rel", default=False, type=bool)
     args.add_argument("-embed_model", "--embed_model", default="TransE", type=str)  # ["NELL-One", "Wiki-One"]
     args.add_argument("-max_neighbor", "--max_neighbor", default=50, type=int)
+    args.add_argument("-amn", "--aug_max_num", default=10, type=int)
 
     args = args.parse_args()
     params = {}
@@ -58,6 +59,7 @@ data_dir = {
     'train_tasks': '/train_tasks.json',
     'test_tasks': "/test_tasks.json",
     'dev_tasks': "/dev_tasks.json",
+    'aug_dic': "/full_dic.json",
 
     'rel2candidates_in_train': '/rel2candidates_in_train.json',
     'rel2candidates': '/rel2candidates.json',
