@@ -52,7 +52,7 @@ if __name__ == '__main__':
     print("----------------------------")
 
     # data_loader
-    train_data_loader = DataLoader(dataset, params, step='train')
+    train_data_loader = TrainDataLoader(dataset, params, step='train')
     dev_data_loader = DataLoader(dataset, params, step='dev')
     test_data_loader = DataLoader(dataset, params, step='test')
     data_loaders = [train_data_loader, dev_data_loader, test_data_loader]
