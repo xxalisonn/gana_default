@@ -59,6 +59,9 @@ data_dir = {
     'train_tasks': '/train_tasks.json',
     'test_tasks': "/test_tasks.json",
     'dev_tasks': "/dev_tasks.json",
+    'train_tasks_woboost': '/train.json',
+    'test_tasks_woboost': "/test.json",
+    'dev_tasks_woboost': "/dev.json",
     'aug_dic': "/full_dic.json",
 
     'rel2candidates_in_train': '/rel2candidates_in_train.json',
