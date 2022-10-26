@@ -64,7 +64,7 @@ if __name__ == '__main__':
         print("test")
         print(params['prefix'])
         trainer.reload()
-        trainer.eval(istest=True)
+        trainer.eval_by_relation(istest=True)
     elif params['step'] == 'test':
         print(params['prefix'])
         if params['eval_by_rel']:
