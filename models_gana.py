@@ -84,7 +84,7 @@ class EmbeddingLearner(nn.Module):
     
     def projected(self, ent, norm):
         norm = F.normalize(norm, p=2, dim=-1)
-        return ent - torch.sum(ent * norm, dim = 1, keepdim=True) * norm
+        return ent - torch.sum(ent * norm, dim = -1, keepdim=True) * norm
 
     def forward(self, h, t, r, pos_num, norm):
         norm = norm[:,:1,:,:]						# revise
