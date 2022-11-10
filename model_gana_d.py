@@ -287,8 +287,9 @@ class MetaR(nn.Module):
                 loss.backward(retain_graph=True)
                 grad_meta = rel.grad
                 rel_q = rel - self.beta*grad_meta
+                norm_q = norm_vector - self.beta_h * grad_meta
                 hyper_grad = norm_vector.grad
-                norm_q = norm_vector - self.beta_h * hyper_grad
+#                 norm_q = norm_vector - self.beta_h * hyper_grad
 
             else:
                 rel_q = rel
