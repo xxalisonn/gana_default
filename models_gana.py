@@ -85,14 +85,33 @@ class EmbeddingLearner(nn.Module):
     def projected(self, ent, norm):
         norm = F.normalize(norm, p=2, dim=-1)
         return ent - torch.sum(ent * norm, dim = -1, keepdim=True) * norm
+    
+    def transfer(self, e, rel_mat):
+        e = F.normalize(e, 2, -1)
+        batch,num,ex,dim_ = e.size()
+        rel_mat.expand(-1, num, -1,-1)
+        rel_matrix = rel_mat.view(batch,-1, dim_, dim_)
+        e = e.view(batch,-1, 1, dim_)
+        e = torch.matmul(e, rel_matrix)
+        return e.view(batch,-1, dim_)
 
-    def forward(self, h, t, r, pos_num, norm):
+    def forward(self, h, t, r, pos_num, norm, hyper):
         norm = norm[:,:1,:,:]						# revise
-        h = h - torch.sum(h * norm, -1, True) * norm
-        t = t - torch.sum(t * norm, -1, True) * norm
-#         h = self.projected(h,norm)
-#         t = self.projected(t,norm)
-        score = -torch.norm(h + r - t, 2, -1).squeeze(2)
+#         h = h - torch.sum(h * norm, -1, True) * norm
+#         t = t - torch.sum(t * norm, -1, True) * norm
+        
+        if hyper == 'transh':
+            h = self.projected(h,norm)
+            t = self.projected(t,norm)
+            score = -torch.norm(h + r - t, 2, -1).squeeze(2)
+        elif hyper == 'transr':
+            h = self.transfer(h,norm)
+            t = self.transfer(t,norm)
+            h= F.normalize(h, 2, -1)
+            r = F.normalize(r, 2, -1).squeeze(2)
+            t = F.normalize(t, 2, -1)
+            score = -torch.norm(h + r - t, 2, -1)
+        
         p_score = score[:, :pos_num]
         n_score = score[:, pos_num:]
         return p_score, n_score
@@ -114,9 +133,11 @@ class MetaR(nn.Module):
         self.abla = parameter['ablation']
         self.rel2id = dataset['rel2id']
         self.batchsize = parameter['batch_size']
+        self.hyper = parameter['hyper']
         self.num_rel = len(self.rel2id)
         self.embedding = Embedding(dataset, parameter)
         self.h_embedding = H_Embedding(dataset, parameter)
+        self.r_embedding = R_Embedding(dataset, parameter)
         self.few = parameter['few']
         self.dropout = nn.Dropout(0.5)
         self.symbol_emb = nn.Embedding(num_symbols + 1, self.embed_dim, padding_idx = num_symbols)
@@ -189,7 +210,11 @@ class MetaR(nn.Module):
     def forward(self, task, iseval=False, curr_rel='', support_meta=None, istest=False):
         # transfer task string into embedding
         support, support_negative, query, negative = [self.embedding(t) for t in task]
-        norm_vector = self.h_embedding(task[0])
+        if self.hyper == 'transh':
+            norm_vector = self.h_embedding(task[0])
+        elif self.hyper == 'transr':
+            norm_vector = self.r_embedding(task[0])
+            
         few = support.shape[1]              # num of few
         num_sn = support_negative.shape[1]  # num of support negative
         num_q = query.shape[1]              # num of query
@@ -222,15 +247,21 @@ class MetaR(nn.Module):
                 # split on e1/e2 and concat on pos/neg
                 sup_neg_e1, sup_neg_e2 = self.split_concat(support, support_negative)
 
-                p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector)	# revise norm_vector
+                p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector,self.hyper)	# revise norm_vector
 
                 y = torch.ones(p_score.size()).cuda()
                 self.zero_grad()
+                if self.hyper == 'transr':
+                    norm_vector.retain_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
                 grad_meta = rel.grad
                 rel_q = rel - self.beta*grad_meta
-                norm_q = norm_vector - self.beta*grad_meta				# hyper-plane update
+                if self.hyper == 'transr':
+                    hyper_grad = norm_vector.grad
+                    norm_q = norm_vector - self.beta*hyper_grad
+                elif self.hyper == 'transe':
+                    norm_q = norm_vector - self.beta*grad_meta				# hyper-plane update
             else:
                 rel_q = rel
                 norm_q = norm_vector
@@ -244,6 +275,6 @@ class MetaR(nn.Module):
         que_neg_e1, que_neg_e2 = self.split_concat(query, negative)  # [bs, nq+nn, 1, es]
         if iseval:
             norm_q = self.h_norm
-        p_score, n_score = self.embedding_learner(que_neg_e1, que_neg_e2, rel_q, num_q, norm_q)
+        p_score, n_score = self.embedding_learner(que_neg_e1, que_neg_e2, rel_q, num_q, norm_q,self.hyper)
 
         return p_score, n_score
