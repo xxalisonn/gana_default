@@ -1,5 +1,6 @@
 from embedding import *
 from hyper_embedding import *
+from r_embedding import *
 from collections import OrderedDict
 import torch
 import json
