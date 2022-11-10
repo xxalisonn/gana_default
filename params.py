@@ -38,6 +38,7 @@ def get_params():
     args.add_argument("-embed_model", "--embed_model", default="TransE", type=str)  # ["NELL-One", "Wiki-One"]
     args.add_argument("-max_neighbor", "--max_neighbor", default=50, type=int)
     args.add_argument("-amn", "--aug_max_num", default=10, type=int)
+    args.add_argument("--hyper", default='transh', type=str)
 
     args = args.parse_args()
     params = {}
