@@ -259,9 +259,11 @@ class MetaR(nn.Module):
                 grad_meta = rel.grad
                 rel_q = rel - self.beta*grad_meta
                 if self.hyper == 'transr':
-                    hyper_grad = norm_vector.grad
-                    norm_q = norm_vector - self.beta*hyper_grad
-                elif self.hyper == 'transe':
+                    norm_q = norm_vector
+#                     hyper_grad = norm_vector.grad
+#                     norm_q = norm_vector - self.beta*hyper_grad
+    
+                elif self.hyper == 'transh':
                     norm_q = norm_vector - self.beta*grad_meta				# hyper-plane update
             else:
                 rel_q = rel
@@ -274,8 +276,10 @@ class MetaR(nn.Module):
         rel_q = rel_q.expand(-1, num_q + num_n, -1, -1)
 
         que_neg_e1, que_neg_e2 = self.split_concat(query, negative)  # [bs, nq+nn, 1, es]
+        
         if iseval:
             norm_q = self.h_norm
+            
         p_score, n_score = self.embedding_learner(que_neg_e1, que_neg_e2, rel_q, num_q, norm_q,self.hyper)
 
         return p_score, n_score
