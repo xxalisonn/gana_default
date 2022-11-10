@@ -149,6 +149,7 @@ class MetaR(nn.Module):
         self.beta_h = parameter['beta_h']
         self.dropout_p = parameter['dropout_p']
         self.embed_dim = parameter['embed_dim']
+        self.ent2id = dataset['ent2id']
         self.margin = parameter['margin']
         self.abla = parameter['ablation']
         self.rel2id = dataset['rel2id']
