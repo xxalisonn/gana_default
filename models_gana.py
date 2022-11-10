@@ -252,8 +252,7 @@ class MetaR(nn.Module):
 
                 y = torch.ones(p_score.size()).cuda()
                 self.zero_grad()
-                if self.hyper == 'transr':
-                    norm_vector.retain_grad()
+                norm_vector.retain_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
                 grad_meta = rel.grad
