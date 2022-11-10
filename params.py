@@ -23,6 +23,7 @@ def get_params():
     args.add_argument("-ckpt_epo", "--checkpoint_epoch", default=1000, type=int)
 
     args.add_argument("-b", "--beta", default=5, type=float)	# 5
+    args.add_argument("-bh", "--beta_h", default=5, type=float)	# 5
     args.add_argument("-m", "--margin", default=1.0, type=float)	# default: 1
     args.add_argument("-p", "--dropout_p", default=0.5, type=float)
     args.add_argument("-abla", "--ablation", default=False, type=bool)
