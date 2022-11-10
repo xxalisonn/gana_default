@@ -88,8 +88,10 @@ class EmbeddingLearner(nn.Module):
 
     def forward(self, h, t, r, pos_num, norm):
         norm = norm[:,:1,:,:]						# revise
-        h = h - torch.sum(h * norm, -1, True) * norm
-        t = t - torch.sum(t * norm, -1, True) * norm
+#         h = h - torch.sum(h * norm, -1, True) * norm
+#         t = t - torch.sum(t * norm, -1, True) * norm
+        h = self.projected(h,norm)
+        t = self.projected(t,norm)
         score = -torch.norm(h + r - t, 2, -1).squeeze(2)
         p_score = score[:, :pos_num]
         n_score = score[:, pos_num:]
