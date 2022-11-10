@@ -128,6 +128,7 @@ class MetaR(nn.Module):
         super(MetaR, self).__init__()
         self.device = parameter['device']
         self.beta = parameter['beta']
+        self.beta_h = parameter['beta_h']
         self.dropout_p = parameter['dropout_p']
         self.embed_dim = parameter['embed_dim']
         self.margin = parameter['margin']
@@ -251,16 +252,16 @@ class MetaR(nn.Module):
                 p_score, n_score = self.embedding_learner(sup_neg_e1, sup_neg_e2, rel_s, few, norm_vector,self.hyper)	# revise norm_vector
 
                 y = torch.ones(p_score.size()).cuda()
-                self.zero_grad()
                 norm_vector.retain_grad()
+                self.zero_grad()
                 loss = self.loss_func(p_score, n_score, y)
                 loss.backward(retain_graph=True)
                 grad_meta = rel.grad
                 rel_q = rel - self.beta*grad_meta
                 if self.hyper == 'transr':
-                    norm_q = norm_vector
-#                     hyper_grad = norm_vector.grad
-#                     norm_q = norm_vector - self.beta*hyper_grad
+#                     norm_q = norm_vector
+                    hyper_grad = norm_vector.grad
+                    norm_q = norm_vector - self.beta_h * hyper_grad
     
                 elif self.hyper == 'transh':
 #                     norm_q = norm_vector - self.beta*grad_meta
