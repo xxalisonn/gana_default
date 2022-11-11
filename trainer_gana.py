@@ -1,4 +1,4 @@
-from model_gana_d import *
+from model_gana_wo import *
 from tensorboardX import SummaryWriter
 import os
 import sys
