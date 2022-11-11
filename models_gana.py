@@ -266,7 +266,7 @@ class MetaR(nn.Module):
                 elif self.hyper == 'transh':
 #                     norm_q = norm_vector - self.beta*grad_meta
                     hyper_grad = norm_vector.grad
-                    norm_q = norm_vector - self.beta*hyper_grad
+                    norm_q = norm_vector - self.beta*grad_meta
 
             else:
                 rel_q = rel
