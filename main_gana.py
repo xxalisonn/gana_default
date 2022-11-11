@@ -24,6 +24,7 @@ if __name__ == '__main__':
     for k, v in data_dir.items():
         data_dir[k] = params['data_path']+v
 
+    tail = ''
     if params['data_form'] == 'In-Train':
        tail = '_in_train'
 
